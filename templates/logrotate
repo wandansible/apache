@@ -1,0 +1,24 @@
+#jinja2: trim_blocks: "false", lstrip_blocks: "true"
+# {{ ansible_managed }}
+
+{% for item in apache_logrotate_config %}
+/var/log/apache2/{{ item.logs }} {
+  {% set _options = apache_logrotate_default_options | combine(item.options | default({})) %}
+  {% set _scripts = apache_logrotate_default_scripts | combine(item.scripts | default({})) %}
+  {% for key, value in _options | dictsort %}
+    {% if value or value == "" %}
+        {{ key }}{{ " " + value | string if value != "" else "" }}
+    {% endif %}
+  {% endfor %}
+  {% for key, value in _scripts | dictsort %}
+    {% if value %}
+        {{ key }}
+                {{ value | indent(16, false) | trim }}
+        endscript
+    {% endif %}
+  {% endfor %}
+}
+  {% if not loop.last %}
+
+  {% endif %}
+{% endfor %}

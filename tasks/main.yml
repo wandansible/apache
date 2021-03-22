@@ -1,0 +1,125 @@
+---
+- name: Install apache packages
+  ansible.builtin.apt:
+    name: "{{ ['apache2'] + apache_extra_pkgs }}"
+    state: present
+
+- name: Enable apache modules
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ apache_default_mods_enabled + apache_mods_enabled }}"
+  notify: restart apache
+
+- name: Disable apache modules
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ apache_default_mods_disabled + apache_mods_disabled }}"
+  notify: restart apache
+
+- name: Create apache log directories
+  ansible.builtin.file:
+    path: "/var/log/apache2/{{ item.dir }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('adm') }}"
+    mode: "{{ item.mode | default('u=rwx,g=rx,o=') }}"
+  loop: "{{ apache_log_dirs }}"
+  loop_control:
+    label: "/var/log/apache2/{{ item.dir }}"
+
+- name: Configure logrotate for apache2
+  ansible.builtin.template:
+    src: logrotate
+    dest: /etc/logrotate.d/apache2
+    mode: u=rw,g=r,o=
+    owner: root
+    group: root
+  when: apache_logrotate_config != []
+
+- name: Get SSL certs status
+  ansible.builtin.stat:
+    path: "{{ item.certificate_file }}"
+  register: apache_ssl_certificates
+  loop: "{{ apache_vhosts_ssl }}"
+  loop_control:
+    label: "{{ item.certificate_file }}"
+
+- name: Configure apache vhosts
+  ansible.builtin.template:
+    src: "{{ apache_vhosts_template }}"
+    dest: /etc/apache2/sites-available/{{ apache_vhosts_filename }}
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify: reload apache
+  when: apache_vhosts | length > 0 or apache_vhosts_ssl | length > 0
+
+- name: Activate apache vhosts
+  ansible.builtin.file:
+    src: /etc/apache2/sites-available/{{ apache_vhosts_filename }}
+    dest: /etc/apache2/sites-enabled/{{ apache_vhosts_filename }}
+    state: link
+  notify: reload apache
+  when: apache_vhosts | length > 0 or apache_vhosts_ssl | length > 0
+
+- name: Configure additional apache vhosts
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: /etc/apache2/sites-available/{{ item | basename }}
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify: reload apache
+  loop: "{{ apache_sites_templates }}"
+
+- name: Activate additional apache vhosts
+  ansible.builtin.file:
+    src: /etc/apache2/sites-available/{{ item | basename }}
+    dest: /etc/apache2/sites-enabled/{{ item | basename }}
+    state: link
+  notify: reload apache
+  loop: "{{ apache_sites_templates }}"
+
+- name: Disable apache vhosts
+  ansible.builtin.file:
+    path: /etc/apache2/sites-enabled/{{ item }}
+    state: absent
+  notify: reload apache
+  when: not item in (apache_sites_templates | map('basename') | list) + [apache_vhosts_filename]
+  loop: "{{ apache_sites_disabled }}"
+
+- name: Add additional apache configuration
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: /etc/apache2/conf-available/{{ item | basename }}
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify: reload apache
+  loop: "{{ apache_conf_templates }}"
+
+- name: Activate additional apache configuration
+  ansible.builtin.file:
+    src: /etc/apache2/conf-available/{{ item | basename }}
+    dest: /etc/apache2/conf-enabled/{{ item | basename }}
+    state: link
+  notify: reload apache
+  loop: "{{ apache_conf_templates }}"
+
+- name: Configure apache modules
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: /etc/apache2/mods-available/{{ item | basename }}
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  notify: reload apache
+  loop: "{{ apache_mods_templates }}"
+
+- name: Ensure apache is started and enabled
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true
