@@ -1,0 +1,280 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure apache2
+    description: |
+      Install apache2 and configure both HTTP and HTTPS virtual hosts.
+    options:
+      apache_extra_pkgs:
+        description: Extra apache2 packages
+        type: list
+        elements: str
+
+      apache_default_mods_enabled:
+        description: Default apache2 mods to enable
+        type: list
+        elements: str
+        default:
+          - ssl
+
+      apache_default_mods_disabled:
+        description: Default apache2 mods to disable
+        type: list
+        elements: str
+
+      apache_mods_enabled:
+        description: Extra apache2 mods to enable
+        type: list
+        elements: str
+
+      apache_mods_disabled:
+        description: Extra apache2 mods to disable
+        type: list
+        elements: str
+
+      apache_vhosts_filename:
+        description: Destination filename for vhosts configuration file
+        type: str
+
+      apache_vhosts_template:
+        description: Source template file on host running ansible for vhosts configuration
+        type: str
+
+      apache_vhosts:
+        description: Configuration for HTTP vhosts
+        type: list
+        elements: dict
+        options:
+          listenon:
+            description: Listen addresses and ports
+            type: list
+            elements: str
+          servername:
+            description: Hostname and port that the server uses to identify itself
+            type: str
+            required: true
+          serveralias:
+            description: Alternate names for a host used when matching requests to name-virtual hosts
+            type: str
+          documentroot:
+            description: Directory that forms the main document tree visible from the web
+            type: str
+          serveradmin:
+            description: Email address that the server includes in error messages sent to the client
+            type: str
+          customlog:
+            description: Filename for access log stored under /var/log/apache2/
+            type: str
+          errorlog:
+            description: Filename for error log stored under /var/log/apache2/
+            type: str
+          loglevel:
+            description: Controls the verbosity of the error log
+            type: str
+          allow_override:
+            description: Types of directives that are allowed in .htaccess files under documentroot
+            type: str
+          options:
+            description: Configures what features are available under documentroot
+            type: str
+          extra_parameters:
+            description: Extra configuration
+            type: str
+          https_redirect:
+            description: Configuration for redirecting HTTP requests to HTTPS
+            type: str
+            required: true
+
+      apache_vhosts_ssl:
+        description: Configuration for HTTPS vhosts
+        type: list
+        elements: dict
+        options:
+          listenon:
+            description: Listen addresses and ports
+            type: list
+            elements: str
+          servername:
+            description: Hostname and port that the server uses to identify itself
+            type: str
+            required: true
+          serveralias:
+            description: Alternate names for a host used when matching requests to name-virtual hosts
+            type: str
+          documentroot:
+            description: Directory that forms the main document tree visible from the web
+            type: str
+          serveradmin:
+            description: Email address that the server includes in error messages sent to the client
+            type: str
+          customlog:
+            description: Filename for access log stored under /var/log/apache2/
+            type: str
+          errorlog:
+            description: Filename for error log stored under /var/log/apache2/
+            type: str
+          loglevel:
+            description: Controls the verbosity of the error log
+            type: str
+          allow_override:
+            description: Types of directives that are allowed in .htaccess files under documentroot
+            type: str
+          options:
+            description: Configures what features are available under documentroot
+            type: str
+          extra_parameters:
+            description: Extra configuration
+            type: str
+          certificate_file:
+            description: File path to SSL certificate
+            type: str
+            required: true
+          certificate_key_file:
+            description: File path to SSL key
+            type: str
+            required: true
+          certificate_chain_file:
+            description: File path to SSL certificate chain
+            type: str
+
+      apache_default_vhost_options:
+        description: Default vhost options set across all vhosts
+        type: str
+
+      apache_default_http_listenon:
+        description: Default HTTP listen addresses and ports
+        type: list
+        elements: str
+        default:
+          - "*:80"
+
+      apache_default_https_listenon:
+        description: Default HTTPS listen addresses and ports
+        type: list
+        elements: str
+        default:
+          - "*:443"
+
+      apache_allow_override:
+        description: Default allow_override settings for all vhosts
+        type: str
+        default: All
+
+      apache_options:
+        description: Default options settings for all vhosts
+        type: str
+        default: -Indexes +FollowSymLinks
+
+      apache_ignore_missing_ssl_certificate:
+        description: Create HTTPS vhosts even when SSL certificates are missing
+        type: bool
+        default: true
+
+      apache_ssl_options:
+        description: SSL options for all HTTPS vhosts
+        type: str
+
+      apache_log_dirs:
+        description: Log directories created under /var/log/apache2/
+        type: list
+        elements: dict
+        options:
+          dir:
+            description: Name of the directory
+            type: str
+            required: true
+          owner:
+            description: Owner of the directory
+            type: str
+            default: root
+          group:
+            description: Group assigned to the directory
+            type: str
+            default: adm
+          mode:
+            description: Mode of the directory
+            type: str
+            default: u=rwx,g=rx,o=
+
+      apache_default_loglevel:
+        description: Default log level for all vhosts
+        type: str
+        default: warn
+
+      apache_sites_templates:
+        description: Template files for additional vhosts
+        type: list
+        elements: str
+
+      apache_sites_disabled:
+        description: Files to be removed from sites-enabled (files in apache_sites_templates or apache_vhosts_filename are not removed)
+        type: list
+        elements: str
+
+      apache_conf_templates:
+        description:
+          - Template files for additional configuration under conf-enabled
+          - "Builtin templates available:"
+          - "  * conf/ldap.conf"
+          - "  * conf/letsencrypt.conf"
+        type: list
+        elements: str
+
+      apache_mods_templates:
+        description:
+          - Template files for modifying mod configuration under mods-available
+          - "Builtin templates available:"
+          - "  * mods/ssl.conf"
+        type: list
+        elements: str
+        default:
+          - mods/ssl.conf
+
+      apache_logrotate_config:
+        description: Logrotate configuration for apache
+        type: list
+        elements: dict
+        options:
+          logs:
+            description: Fileglob for files under /var/log/apache2/
+            type: str
+            required: true
+          options:
+            description: Logrotate options (overrides options in apache_logrotate_default_options)
+            type: dict
+          scripts:
+            description: Logrotate scripts (overrides scripts in apache_logrotate_default_scripts)
+            type: dict
+
+      apache_logrotate_default_options:
+        description: Default options for logrotate configuration
+        type: dict
+
+      apache_logrotate_default_scripts:
+        description: Default scripts for logrotate configuration
+        type: dict
+
+      apache_ssl_ciphers:
+        description: List of ciphers available for negotiation in SSL handshake
+        type: list
+        elements: str
+        default:
+          - HIGH
+          - "!aNULL"
+
+      apache_honor_cipher_order:
+        description: If true, prefer the server's cipher preference order
+        type: bool
+        default: false
+
+      apache_ssl_protocols:
+        description: List of SSL/TLS protocols to enable
+        type: list
+        elements: str
+        default:
+          - all
+          - -SSLv3
+
+      apache_ssl_extra:
+        description: Extra SSL mod configuration
+        type: str
