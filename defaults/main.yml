@@ -53,3 +53,12 @@ apache_logrotate_default_scripts:
     if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
       run-parts /etc/logrotate.d/httpd-prerotate; \
     fi; \
+
+apache_ssl_ciphers:
+  - HIGH
+  - "!aNULL"
+apache_honor_cipher_order: false
+apache_ssl_protocols:
+  - all
+  - -SSLv3
+apache_ssl_extra: ""
