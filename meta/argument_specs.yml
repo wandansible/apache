@@ -83,7 +83,6 @@ argument_specs:
           https_redirect:
             description: Configuration for redirecting HTTP requests to HTTPS
             type: str
-            required: true
 
       apache_vhosts_ssl:
         description: Configuration for HTTPS vhosts
