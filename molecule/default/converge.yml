@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include wandansible.apache"
+      ansible.builtin.include_role:
+        name: "wandansible.apache"
+      vars:
+        apache_vhosts:
+          - servername: "example.org"
+            serveradmin: "sysadmin@example.org"
+            errorlog: error.log
+            customlog: access.log
+            documentroot: /var/www/html/
+        apache_conf_templates:
+          - conf/letsencrypt.conf
